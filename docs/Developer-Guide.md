@@ -157,7 +157,10 @@ The `qs=` parameter can also be used with the [providers](#specify-searchprovide
 
 RAG processing is available through a single API call using `qs=`, e.g. `?qs=metasearch&rag=true`.
 
-The default AI Summary timeout value can be overridden with a URL parameter in the Galaxy UI. For example: `http://localhost:8000/galaxy/?q=gig%20economics&rag=true&rag_timeout=90000`
+The default AI Summary timeout value can be overridden with a URL parameter in the Galaxy UI. For example: `http://localhost:8000/galaxy/?q=gig%20economics&rag=true&rag_timeout=90`
+
+{: .highlight }
+Starting with SWIRL 3.7.0, we specify `rag_timeout`in seconds
 
 Note that `&page=` is NOT supported with `qs=`; to access the second page of results use the `next_page` property from the `info.results` structure.
 
@@ -507,6 +510,50 @@ The defaults are:
 ## Configure Stopwords Language
 
 SWIRL is configured to load English stopwords only. To change this, modify `SWIRL_DEFAULT_QUERY_LANGUAGE` in [swirl_settings/settings.py](https://github.com/swirlai/swirl-search/blob/main/swirl_server/settings.py) and change it to another [NLTK stopword language](https://stackoverflow.com/questions/54573853/nltk-available-languages-for-stopwords).
+
+## Redact or Remove Personally Identifiable Information (PII) From Queries and/or Results
+
+SWIRL supports the removal or redaction of PII entities using [Microsoft Presidio](https://microsoft.github.io/presidio/). There are three options available:
+
+### `RemovePIIQueryProcessor`
+
+This QueryProcessor removes PII entities from queries. 
+
+To use it. install it in in the QueryProcessing pipeline for a given SearchProvider:
+
+```
+"query_processors": [
+        "AdaptiveQueryProcessor",
+        "RemovePIIQueryProcessor"
+    ]
+```
+
+Or, install it in the PreQueryProcessing pipeline to redact PII from all SearchProviders:
+
+In `swirl/models.py`:
+```
+def getSearchPreQueryProcessorsDefault():
+    return ["RemovePIIQueryProcessor"]
+```
+
+More information: [ResultProcessors](./Developer-Reference.md#result-processors)
+
+### `RemovePIIResultProcessor`
+
+This ResultProcessor redacts PII entities in results. For example, "James T. Kirk" is replaced by "<PERSON>". To use it, install it in the ResultProcessing pipeline for a given SearchProvider.  
+
+```
+"result_processors": [
+        "MappingResultProcessor",
+        "DateFinderResultProcessor",
+        "CosineRelevancyResultProcessor",
+        "RemovePIIResultProcessor"
+    ]
+```
+
+More information: [ResultProcessors](./Developer-Reference.md#post-result-processors)
+
+### `RemovePIIPostResultProcessor`
 
 ## Understand the Explain Structure
 
